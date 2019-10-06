@@ -21,6 +21,7 @@ class FastText():
 
         with tf.name_scope("embedding"):
             self.embed = tf.Variable(tf.random_uniform([self.vocab_size,self.embed_size],-0.5,0.5))
+            tf.summary.histogram("embed",self.embed)
             self.embedding = tf.nn.embedding_lookup(self.embed,self.input_x)
 
         with tf.name_scope("drop_out"):
@@ -35,7 +36,7 @@ class FastText():
 
         with tf.name_scope("loss"):
             self.loss = tf.reduce_mean(-tf.reduce_sum(self.input_y*tf.log(self.output),reduction_indices=[1]))
-
+            tf.summary.scalar('loss', self.loss)
         self.optim = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss)
 
     def make_vocab(self):
@@ -76,9 +77,13 @@ class FastText():
         return input_x, input_y
 
     def train(self):
+
         sess = tf.Session()
         init = tf.initialize_all_variables()
         sess.run(init)
+        merge = tf.summary.merge_all()
+        writer = tf.summary.FileWriter("logs/", sess.graph)
+
         for _ in range(self.train_epochs):
             inputs, label = self.get_batch()
             # inputs = np.array(inputs)
@@ -89,7 +94,8 @@ class FastText():
                 print(loss)
                 # output_label = sess.run(self.output)
                 print("output"+ ' ' + str(output_label))
-
+                res = sess.run(merge,feed_dict={self.input_x.name : inputs, self.input_y.name : label})
+                writer.add_summary(res,_)
 def make_train_file():
     with open(config.data_path + '/FastText/train.txt','w') as f:
         f.write("0 今天天气不错\n")
@@ -108,7 +114,7 @@ def make_train_file():
 
 if __name__ =="__main__":
     # make_train_file()
-    model = FastText(seq_length = 11,embed_size=10,train_epochs=1000, batch_size=2,
+    model = FastText(seq_length = 11,embed_size=2,train_epochs=1000, batch_size=2,
                  drop_out_rate=0.1, class_num=2, learning_rate=0.001)
 
     model.train()
