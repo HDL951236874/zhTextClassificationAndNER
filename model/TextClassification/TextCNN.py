@@ -28,19 +28,21 @@ class TextCNN():
         self.using_sownload = using_download
 
         self.input_x = tf.placeholder(tf.int32,[self.batch_size,self.seq_len])
-        self.input_y = tf.placeholder(tf.float32, [self.batch_size])
+        self.input_y = tf.placeholder(tf.float32, [self.batch_size, self.class_num])
 
 
         with tf.name_scope("embedding"):
             self.embed = tf.Variable(tf.random_uniform([self.vocab_size,self.embed_size],-0.5,0.5))
-            self.embedding = tf.nn.embedding_lookup(self.embed, self.input_x)
+            self.embed_ = tf.nn.embedding_lookup(self.embed, self.input_x)
+            self.embedding = tf.expand_dims(self.embed_,-1)
+
 
         with tf.name_scope("COV"):
             pool_outputs = []
-            for filter_size in self.filter_size:
+            for size in self.filter_size:
                 # the conv_layer's shape = [wid, length, channel_num, filter_num]
-                filer_shape = [filter_size, self.embed, 1, self.filter_num]
-                W = tf.Variable(tf.truncated_normal(filer_shape, stddev=1.0))
+                filer_shape = [size, self.embed_size, 1, self.filter_num]
+                W = tf.Variable(tf.truncated_normal(filer_shape, stddev=0.1))
                 b = tf.Variable(tf.constant(0.1, shape=[self.filter_num]))
 
                 conv =tf.nn.conv2d(self.embedding,
@@ -49,7 +51,7 @@ class TextCNN():
                                    padding='VALID')
                 h = tf.nn.relu(tf.nn.bias_add(conv,b))
                 pool = tf.nn.max_pool(h,
-                                      k_size = [1, self.seq_len - filter_num +1, 1, 1],
+                                      ksize = [1, self.seq_len - size +1, 1, 1],
                                         strides=[1,1,1,1],
                                       padding='VALID'
                                       )
@@ -113,5 +115,7 @@ if __name__ == "__main__":
                  learning_rate = 0.001,
                  embed_size = 50,
                  batch_size = 2,
-                 class_num = 2 )
+                 class_num = 2,
+                    filter_size=[1,2,3,4],
+                filter_num=2)
 
