@@ -109,6 +109,18 @@ class TextCNN():
 
         return input_x, input_y
 
+    def train(self):
+        sess = tf.Session()
+        init = tf.initialize_all_variables()
+        sess.run(init)
+        for _ in range(self.train_epochs):
+            inputs,label = self.get_batch()
+            pre,loss = sess.run([self.optim,self.loss], feed_dict={self.input_x.name : inputs,
+                                                                   self.input_y.name : label})
+
+            if _%50 ==0:
+                print(loss)
+
 if __name__ == "__main__":
     model = TextCNN(seq_len = 11,
                  train_epochs = 1000,
@@ -118,4 +130,4 @@ if __name__ == "__main__":
                  class_num = 2,
                     filter_size=[1,2,3,4],
                 filter_num=2)
-
+    model.train()
