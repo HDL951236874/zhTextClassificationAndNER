@@ -96,6 +96,8 @@ class FastText():
                 print("output"+ ' ' + str(output_label))
                 res = sess.run(merge,feed_dict={self.input_x.name : inputs, self.input_y.name : label})
                 writer.add_summary(res,_)
+
+
 def make_train_file():
     with open(config.data_path + '/FastText/train.txt','w') as f:
         f.write("0 今天天气不错\n")
@@ -113,8 +115,8 @@ def make_train_file():
         f.close()
 
 if __name__ =="__main__":
-    # make_train_file()
-    model = FastText(seq_length = 11,embed_size=2,train_epochs=1000, batch_size=2,
-                 drop_out_rate=0.1, class_num=2, learning_rate=0.001)
-
-    model.train()
+    make_train_file()
+    # model = FastText(seq_length = 11,embed_size=2,train_epochs=1000, batch_size=2,
+    #              drop_out_rate=0.1, class_num=2, learning_rate=0.001)
+    #
+    # model.train()
