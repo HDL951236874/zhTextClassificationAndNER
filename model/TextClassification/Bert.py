@@ -15,12 +15,14 @@ class Bert():
                      hidden_size,
                      batch_size,
                      class_num,
-                     max_prd):
+                     max_prd,
+                    head_num):
         self.seq_len = seq_len
         self.train_epochs = train_epochs
         self.learning_rate = learning_rate
 
         self.hidden_size = hidden_size
+        self.head_num = head_num
         self.batch_size = batch_size
         self.class_num = class_num
         self.segment_num = 2
@@ -32,9 +34,6 @@ class Bert():
         self.input_seg_id = tf.placeholder(tf.int32,[self.batch_size,self.seq_len])
         self.input_mask = tf.placeholder(tf.int32,[self.batch_size,self.seq_len])
 
-
-
-
         with tf.name_scope("embedding"):
             token_embeds = tf.Variable(tf.random_normal([self.vocab_size,self.hidden_size]))
             pos_embeds = tf.Variable(tf.random_normal([self.seq_len,self.hidden_size]))
@@ -43,6 +42,9 @@ class Bert():
             pos_embedding = tf.nn.embedding_lookup(pos_embeds, self.input_pos)
             segment_embedding = tf.nn.embedding_lookup(segment_embeds,self.input_seg_id)
 
+            embed_after_nor = self.LayerNormalization()(token_embedding+pos_embedding+segment_embedding)
+
+            self.embed_after_drop = tf.nn.dropout(embed_after_nor,keep_prob=0.8)
 
     class LayerNormalization(tf.layers.Layer):
         def __init__(self,gamma=1,beta=0):
@@ -60,6 +62,22 @@ class Bert():
             x_normalized = (inputs- x_mean)/np.sqrt(x_var+self.eps)
             res = x_normalized*self.gamma + self.beta
             return res
+
+    def Bert_layer(self,input):
+        after_atten = self.Bert_self_mulihead_attention_layer(input)
+        after_output = self.Bert_output_layer(after_atten)
+        after_poswise = self.Bert_intermediate_layer(after_output)
+
+    def Bert_self_mulihead_attention_layer(self,input):
+        K = tf.Variable(tf.random_normal([self.hidden_size,self.hidden_size]))
+        Q = tf.Variable(tf.random_normal([self.hidden_size,self.hidden_size]))
+        V = tf.Variable(tf.random_normal([self.hidden_size,self.hidden_size]))
+
+    def Bert_output_layer(self,input):
+        pass
+
+    def Bert_intermediate_layer(self,input):
+        pass
 
     def make_vocab_and_train_data(self):
         text = (
@@ -129,16 +147,17 @@ class Bert():
 
             return batch
 
-    
+
 
 if __name__=="__main__":
     model = Bert(seq_len=100,
                      train_epochs=10,
                      learning_rate=0.00001,
-                     hidden_size=128,
+                     hidden_size=768,
                      batch_size = 2,
                      class_num = 2,
-                     max_prd = 3)
+                     max_prd = 3,
+                     head_num = 12)
     # model.make_vocab_and_train_data()
     # x = np.random.rand(3,3,3)
     # layer = model.LayerNormalization()
