@@ -44,7 +44,14 @@ class Bert():
 
             embed_after_nor = self.LayerNormalization()(token_embedding + pos_embedding + segment_embedding)
 
-            self.embed_after_drop = tf.nn.dropout(embed_after_nor, keep_prob=0.8)
+            x = tf.nn.dropout(embed_after_nor, keep_prob=0.8)
+
+        with tf.name_scope("multi-head self att"):
+            for _ in range(12):
+                x = self.Bert_self_mulihead_attention_layer(x,x,x)
+
+
+
 
     class LayerNormalization(tf.layers.Layer):
         def __init__(self, gamma=1, beta=0):
@@ -92,13 +99,25 @@ class Bert():
 
         output =tf.layers.Dense(self.hidden_size,self.hidden_size)(context)
 
-        return self.LayerNormalization()(output)
+        output = self.LayerNormalization()(output)
 
-    def Bert_output_layer(self, input):
-        pass
+        output = self.Bert_intermediate_layer(output)
 
+        return output
+
+    # this is the layer for the poswise self attention
     def Bert_intermediate_layer(self, input):
-        pass
+        x = tf.layers.dense(4*self.hidden_size,input)
+        x = self.gelu(x)
+        x = tf.layers.dense(self.hidden_size,x)
+        x = tf.nn.dropout(x)
+        return x
+
+    # this is the gelu activite function
+    def gelu(self,input_tensor):
+        cdf = 0.5 * (1.0 + tf.erf(input_tensor / tf.sqrt(2.0)))
+        return input_tensor * cdf
+
 
     def ScaleDotProductAtt(self, Q, K, V, att_mask):
         mask = tf.constant(-1e9,shape=[att_mask.shape])
